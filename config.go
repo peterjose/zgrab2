@@ -20,6 +20,7 @@ type Config struct {
 	LocalAddress       string          `long:"source-ip" description:"Local source IP address to use for making connections"`
 	Senders            int             `short:"s" long:"senders" default:"1000" description:"Number of send goroutines to use"`
 	Debug              bool            `long:"debug" description:"Include debug fields in the output."`
+	Trace              bool            `long:"trace" description:"Include debug trace fields in the output."`
 	Flush              bool            `long:"flush" description:"Flush after each line of output."`
 	GOMAXPROCS         int             `long:"gomaxprocs" default:"0" description:"Set GOMAXPROCS"`
 	ConnectionsPerHost int             `long:"connections-per-host" default:"1" description:"Number of times to connect to each host (results in more output)"`
@@ -137,6 +138,18 @@ func validateFrameworkConfiguration() {
 	if config.ReadLimitPerHost > 0 {
 		DefaultBytesReadLimit = config.ReadLimitPerHost * 1024
 	}
+
+	// added support for debug
+	if config.Debug {
+		log.SetLevel(log.DebugLevel)
+		log.Debugf("Debug ENABLED")
+	}
+
+	if config.Trace {
+		log.SetLevel(log.TraceLevel)
+		log.Tracef("Debug TRACE ENABLED")
+	}
+
 }
 
 // GetMetaFile returns the file to which metadata should be output
