@@ -16,7 +16,8 @@ import (
 // Flags give the command-line flags for the opcua module.
 type Flags struct {
 	zgrab2.BaseFlags
-	Hex bool `long:"hex" description:"Store opcua value in hex. "`
+	UseTLS bool `long:"tls" description:"Sends probe with TLS connection. Loads TLS module command options. "`
+	Hex    bool `long:"hex" description:"Store opcua value in hex. "`
 	zgrab2.TLSFlags
 }
 
@@ -154,10 +155,20 @@ var OPCUAServerResp = errors.New("No Server Found")
 func (scanner *Scanner) Scan(target zgrab2.ScanTarget) (zgrab2.ScanStatus, interface{}, error) {
 	var (
 		conn    net.Conn
+		tlsConn *zgrab2.TLSConnection
 		err     error
 		readerr error
 	)
 	conn, err = target.Open(&scanner.config.BaseFlags)
+	if err == nil {
+		if scanner.config.UseTLS {
+			tlsConn, err = scanner.config.TLSFlags.GetTLSConnection(conn)
+			if err == nil {
+				err = tlsConn.Handshake()
+			}
+			conn = tlsConn
+		}
+	}
 
 	if err != nil {
 		return zgrab2.TryGetScanStatus(err), nil, err
