@@ -32,8 +32,9 @@ type Scanner struct {
 
 // ScanResults instances are returned by the module's Scan function.
 type Results struct {
-	Mqtt   string `json:"mqtt,omitempty"`
-	Length int    `json:"length,omitempty"`
+	Mqtt   string         `json:"mqtt,omitempty"`
+	Length int            `json:"length,omitempty"`
+	TLSLog *zgrab2.TLSLog `json:"tls,omitempty"`
 }
 
 // RegisterModule is called by modules/mqtt.go to register the scanner.
@@ -143,6 +144,7 @@ func (scanner *Scanner) Scan(target zgrab2.ScanTarget) (zgrab2.ScanStatus, inter
 	var (
 		conn    net.Conn
 		tlsConn *zgrab2.TLSConnection
+		results Results
 		err     error
 		readerr error
 	)
@@ -153,6 +155,7 @@ func (scanner *Scanner) Scan(target zgrab2.ScanTarget) (zgrab2.ScanStatus, inter
 			if err == nil {
 				err = tlsConn.Handshake()
 			}
+			results.TLSLog = tlsConn.GetLog()
 			conn = tlsConn
 		}
 	}
@@ -168,17 +171,17 @@ func (scanner *Scanner) Scan(target zgrab2.ScanTarget) (zgrab2.ScanStatus, inter
 	ret, readerr = zgrab2.ReadAvailable(conn)
 
 	if err != nil {
-		return zgrab2.TryGetScanStatus(err), nil, err
+		return zgrab2.TryGetScanStatus(err), &results, err
 	}
 	if readerr != io.EOF && readerr != nil {
-		return zgrab2.TryGetScanStatus(readerr), nil, readerr
+		return zgrab2.TryGetScanStatus(readerr), &results, readerr
 	}
-	var results Results
 	if scanner.config.Hex {
-		results = Results{Mqtt: hex.EncodeToString(ret), Length: len(ret)}
+		results.Mqtt = hex.EncodeToString(ret)
 	} else {
-		results = Results{Mqtt: string(ret), Length: len(ret)}
+		results.Mqtt = string(ret)
 	}
+	results.Length = len(ret)
 	if len(ret) == 4 {
 		if (ret[0] & 0xF0) == 0x20 {
 			return zgrab2.SCAN_SUCCESS, &results, nil

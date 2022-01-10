@@ -43,8 +43,9 @@ func init() {
 
 // ScanResults instances are returned by the module's Scan function.
 type Results struct {
-	xmpp   string `json:"xmpp,omitempty"`
-	Length int    `json:"length,omitempty"`
+	xmpp   string         `json:"xmpp,omitempty"`
+	Length int            `json:"length,omitempty"`
+	TLSLog *zgrab2.TLSLog `json:"tls,omitempty"`
 }
 
 // RegisterModule is called by modules/xmpp.go to register the scanner.
@@ -130,6 +131,7 @@ func (scanner *Scanner) Scan(target zgrab2.ScanTarget) (zgrab2.ScanStatus, inter
 	var (
 		conn    net.Conn
 		tlsConn *zgrab2.TLSConnection
+		results Results
 		err     error
 		readerr error
 	)
@@ -147,6 +149,7 @@ func (scanner *Scanner) Scan(target zgrab2.ScanTarget) (zgrab2.ScanStatus, inter
 			if err = tlsConn.Handshake(); err != nil {
 				continue
 			}
+			results.TLSLog = tlsConn.GetLog()
 			conn = tlsConn
 		}
 
@@ -172,13 +175,13 @@ func (scanner *Scanner) Scan(target zgrab2.ScanTarget) (zgrab2.ScanStatus, inter
 		break
 	}
 	if err != nil {
-		return zgrab2.TryGetScanStatus(err), nil, err
+		return zgrab2.TryGetScanStatus(err), &results, err
 	}
 	if readerr != io.EOF && readerr != nil {
-		return zgrab2.TryGetScanStatus(readerr), nil, readerr
+		return zgrab2.TryGetScanStatus(readerr), &results, readerr
 	}
-	var results Results
-	results = Results{xmpp: string(ret), Length: len(ret)}
+	results.xmpp = string(ret)
+	results.Length = len(ret)
 
 	if scanner.regex.Match(ret) {
 		return zgrab2.SCAN_SUCCESS, &results, nil

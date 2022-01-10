@@ -34,8 +34,9 @@ type Scanner struct {
 
 // ScanResults instances are returned by the module's Scan function.
 type Results struct {
-	Opcua  string `json:"opcua,omitempty"`
-	Length int    `json:"length,omitempty"`
+	Opcua  string         `json:"opcua,omitempty"`
+	Length int            `json:"length,omitempty"`
+	TLSLog *zgrab2.TLSLog `json:"tls,omitempty"`
 }
 
 // NewFlags returns a new default flags object.
@@ -156,6 +157,7 @@ func (scanner *Scanner) Scan(target zgrab2.ScanTarget) (zgrab2.ScanStatus, inter
 	var (
 		conn    net.Conn
 		tlsConn *zgrab2.TLSConnection
+		results Results
 		err     error
 		readerr error
 	)
@@ -166,6 +168,7 @@ func (scanner *Scanner) Scan(target zgrab2.ScanTarget) (zgrab2.ScanStatus, inter
 			if err == nil {
 				err = tlsConn.Handshake()
 			}
+			results.TLSLog = tlsConn.GetLog()
 			conn = tlsConn
 		}
 	}
@@ -181,17 +184,18 @@ func (scanner *Scanner) Scan(target zgrab2.ScanTarget) (zgrab2.ScanStatus, inter
 	ret, readerr = zgrab2.ReadAvailable(conn)
 
 	if err != nil {
-		return zgrab2.TryGetScanStatus(err), nil, err
+		return zgrab2.TryGetScanStatus(err), &results, err
 	}
 	if readerr != io.EOF && readerr != nil {
-		return zgrab2.TryGetScanStatus(readerr), nil, readerr
+		return zgrab2.TryGetScanStatus(readerr), &results, readerr
 	}
-	var results Results
+
 	if scanner.config.Hex {
-		results = Results{Opcua: hex.EncodeToString(ret), Length: len(ret)}
+		results.Opcua = hex.EncodeToString(ret)
 	} else {
-		results = Results{Opcua: string(ret), Length: len(ret)}
+		results.Opcua = string(ret)
 	}
+	results.Length = len(ret)
 
 	if scanner.regex.Match(ret) {
 		return zgrab2.SCAN_SUCCESS, &results, nil
