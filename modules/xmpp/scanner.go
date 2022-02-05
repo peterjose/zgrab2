@@ -43,7 +43,7 @@ func init() {
 
 // ScanResults instances are returned by the module's Scan function.
 type Results struct {
-	xmpp   string         `json:"xmpp,omitempty"`
+	Xmpp   string         `json:"xmpp,omitempty"`
 	Length int            `json:"length,omitempty"`
 	TLSLog *zgrab2.TLSLog `json:"tls,omitempty"`
 }
@@ -180,7 +180,7 @@ func (scanner *Scanner) Scan(target zgrab2.ScanTarget) (zgrab2.ScanStatus, inter
 	if readerr != io.EOF && readerr != nil {
 		return zgrab2.TryGetScanStatus(readerr), &results, readerr
 	}
-	results.xmpp = string(ret)
+	results.Xmpp = string(ret)
 	results.Length = len(ret)
 
 	if scanner.regex.Match(ret) {
