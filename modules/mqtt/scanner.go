@@ -182,8 +182,15 @@ func (scanner *Scanner) Scan(target zgrab2.ScanTarget) (zgrab2.ScanStatus, inter
 		results.Mqtt = string(ret)
 	}
 	results.Length = len(ret)
+	// CONNACK
 	if len(ret) == 4 {
-		if (ret[0] & 0xF0) == 0x20 {
+		if ((ret[0] & 0xF0) == 0x20) && (ret[1] == 0x02) {
+			return zgrab2.SCAN_SUCCESS, &results, nil
+		}
+	}
+	// DISCONNECT
+	if len(ret) == 2 {
+		if ((ret[0] & 0xF0) == 0xE0) && (ret[1] == 0x00) {
 			return zgrab2.SCAN_SUCCESS, &results, nil
 		}
 	}
