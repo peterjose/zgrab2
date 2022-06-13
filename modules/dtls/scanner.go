@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"log"
 	"net"
-	"time"
 
 	dtls "github.com/pion/dtls/v2"
 	"github.com/pion/dtls/v2/pkg/crypto/selfsign"
@@ -135,7 +134,7 @@ func (scanner *Scanner) Scan(target zgrab2.ScanTarget) (zgrab2.ScanStatus, inter
 	}
 
 	// Connect to a DTLS server
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), scanner.config.BaseFlags.Timeout)
 	defer cancel()
 	conn, err = dtls.DialWithContext(ctx, "udp", address, config)
 	if err != nil {
