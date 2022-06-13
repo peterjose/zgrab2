@@ -6,7 +6,9 @@ import (
 	"github.com/zmap/zgrab2/modules/amqp"
 	"github.com/zmap/zgrab2/modules/bacnet"
 	"github.com/zmap/zgrab2/modules/banner"
+	"github.com/zmap/zgrab2/modules/coap"
 	"github.com/zmap/zgrab2/modules/dnp3"
+	"github.com/zmap/zgrab2/modules/dtls"
 	"github.com/zmap/zgrab2/modules/fox"
 	"github.com/zmap/zgrab2/modules/ftp"
 	"github.com/zmap/zgrab2/modules/http"
@@ -64,6 +66,8 @@ func init() {
 		"mqtt":  &mqtt.Module{},
 		"amqp":  &amqp.Module{},
 		"opcua": &opcua.Module{},
+		"coap":  &coap.Module{},
+		"dtls":  &dtls.Module{},
 	}
 }
 
