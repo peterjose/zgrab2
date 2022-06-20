@@ -118,11 +118,14 @@ func (scanner *Scanner) Scan(target zgrab2.ScanTarget) (zgrab2.ScanStatus, inter
 		port = scanner.config.BaseFlags.Port
 	}
 
+	logrus.Infof("Sending probe to %s:%d", target.Host(), int(port))
+
 	address := &net.UDPAddr{IP: net.ParseIP(target.Host()), Port: int(port)}
 
 	certificate, err := selfsign.GenerateSelfSigned()
 	if err != nil {
 		// log.Fatalf("Error dialing: %v", err)
+		logrus.Infof("Generate Self Signed Error %s:%d", target.Host(), int(port))
 		return zgrab2.SCAN_UNKNOWN_ERROR, nil, err
 	}
 	// Prepare the configuration of the DTLS connection
@@ -139,6 +142,7 @@ func (scanner *Scanner) Scan(target zgrab2.ScanTarget) (zgrab2.ScanStatus, inter
 	conn, err = dtls.DialWithContext(ctx, "udp", address, config)
 	if err != nil {
 		// log.Fatalf("Error dialing: %v", err)
+		logrus.Infof("Dail Error %s:%d", target.Host(), int(port))
 		return zgrab2.SCAN_UNKNOWN_ERROR, nil, err
 	}
 
