@@ -9,6 +9,7 @@ import (
 	dtls "github.com/pion/dtls/v2"
 	"github.com/pion/dtls/v2/pkg/crypto/selfsign"
 	"github.com/pion/logging"
+	"github.com/sirupsen/logrus"
 
 	"github.com/zmap/zgrab2"
 )
