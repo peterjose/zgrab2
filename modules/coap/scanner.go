@@ -10,6 +10,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"strings"
 
 	"github.com/pion/dtls/v2"
 	"github.com/pion/dtls/v2/pkg/crypto/selfsign"
@@ -20,7 +21,7 @@ import (
 type Flags struct {
 	zgrab2.BaseFlags
 	zgrab2.UDPFlags
-	UriPath string `long:"uri-path" default:"/.well-known/core" description:"URI path of the coap server. Use triple slashes to escape, for example \\\\\\n is literal \\n. NOTE: Implementation Pending"`
+	UriPath string `long:"uri-path" default:"/.well-known/core" description:"URI path of the coap server. Use triple slashes to escape, for example \\\\\\n is literal \\n."`
 	UseDTLS bool   `long:"dtls" description:"Sends probe with DTLS connection. Loads DTLS module command options. "`
 	Hex     bool   `long:"hex" description:"Store mqtt value in hex. "`
 }
@@ -110,6 +111,8 @@ func (scanner *Scanner) Init(flags zgrab2.ScanFlags) error {
 		coapHeader  byte
 		code_GET    byte
 		token_value byte
+		optionInfo  byte
+		optionLen   byte
 	)
 	coapHeader = 0x41
 	code_GET = 0x01
@@ -124,11 +127,28 @@ func (scanner *Scanner) Init(flags zgrab2.ScanFlags) error {
 	binary.BigEndian.PutUint16(msgID, 61000)
 	connectPkt.Write(msgID)
 	connectPkt.WriteByte(token_value)
-	// TODO: pending implementation of CoAP Option field
-	// connectPkt.Write([]byte{0xBB})
-	// connectPkt.Write([]byte(scanner.config.UriPath))
 
-	connectPkt.Write([]byte{0xBB, 0x2E, 0x77, 0x65, 0x6C, 0x6C, 0x2D, 0x6B, 0x6E, 0x6F, 0x77, 0x6E, 0x04, 0x63, 0x6F, 0x72, 0x65}) // corresponding to /.well-known/core
+	optionInfo = 0xB0
+	path := strings.Split(scanner.config.UriPath, "/")
+	for i := 0; i < len(path); i++ {
+		if len(path[i]) > 255 {
+			panic("coap: Error invalid path length")
+		}
+		if len(path[i]) != 0 {
+
+			if len(path[i]) >= 13 {
+				optionInfo = optionInfo | 13
+				optionLen = byte(len(path[i]) - 13)
+				connectPkt.WriteByte(optionInfo)
+				connectPkt.WriteByte(optionLen)
+			} else {
+				optionInfo = optionInfo | byte(len(path[i]))
+				connectPkt.WriteByte(optionInfo)
+			}
+			optionInfo = 0x00
+			connectPkt.Write([]byte(path[i]))
+		}
+	}
 
 	scanner.probe = connectPkt.Bytes()
 	return nil
