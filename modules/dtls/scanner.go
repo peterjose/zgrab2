@@ -3,6 +3,7 @@ package dtls
 import (
 	"context"
 	"crypto/tls"
+	"encoding/hex"
 	"log"
 	"net"
 
@@ -32,8 +33,12 @@ type Scanner struct {
 
 // ScanResults instances are returned by the module's Scan function.
 type Results struct {
-	Dtls   string `json:"dtls,omitempty"`
-	Length int    `json:"length,omitempty"`
+	Dtls               string `json:"dtls,omitempty"`
+	Length             int    `json:"length,omitempty"`
+	PeerCertificate    string `json:"PeerCertificate,omitempty"`
+	IdentityHint       string `json:"IdentityHint,omitempty"`
+	NegotiatedProtocol string `json:"NegotiatedProtocol,omitempty"`
+	SessionID          string `json:"SessionID,omitempty"`
 }
 
 // RegisterModule registers the zgrab2 module.
@@ -152,6 +157,10 @@ func (scanner *Scanner) Scan(target zgrab2.ScanTarget) (zgrab2.ScanStatus, inter
 	results.Dtls = ""
 	//fmt.Printf("logs: %v\n", logs, results.Dtls)
 	results.Length = len(results.Dtls)
+	results.PeerCertificate = hex.EncodeToString(conn.ConnectionState().PeerCertificates[0])
+	results.SessionID = hex.EncodeToString(conn.ConnectionState().SessionID)
+	results.IdentityHint = hex.EncodeToString(conn.ConnectionState().IdentityHint)
+	results.NegotiatedProtocol = conn.ConnectionState().NegotiatedProtocol
 
 	return zgrab2.SCAN_SUCCESS, &results, nil
 
