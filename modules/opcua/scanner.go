@@ -29,6 +29,7 @@ type Module struct {
 type Scanner struct {
 	config *Flags
 	regex  *regexp.Regexp
+	regex1 *regexp.Regexp
 	probe  []byte
 }
 
@@ -103,6 +104,7 @@ func (scanner *Scanner) Init(flags zgrab2.ScanFlags) error {
 	var MessageSize = len(MessageType) + 1 + len(endpointUrl) + 28
 
 	scanner.regex = regexp.MustCompile("ACK")
+	scanner.regex1 = regexp.MustCompile("HEL")
 	// Based on https://reference.opcfoundation.org/v104/Core/docs/Part6/7.1.2/
 
 	// Message Type
@@ -197,7 +199,7 @@ func (scanner *Scanner) Scan(target zgrab2.ScanTarget) (zgrab2.ScanStatus, inter
 	}
 	results.Length = len(ret)
 
-	if scanner.regex.Match(ret) {
+	if scanner.regex.Match(ret) || scanner.regex1.Match(ret) {
 		return zgrab2.SCAN_SUCCESS, &results, nil
 	}
 
